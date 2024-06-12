@@ -17,3 +17,18 @@ If you do not have any of the following installs then run the following commands
 `pip3 install toml`
 
 `pip3 install datetime`
+
+## Getting started
+There are only a handful of objects 
+```
+import PyPredict
+
+Stats=pypredict.Statistics.Statistics()
+args = PyPredict.TOMLHandler.load_args("Variables.toml") #load arguments from the TOML file
+
+#split the scraped JSON into training, testing, and validation
+#for time series prediction given a ratio tuple accepting
+#raw percentage values
+Stats.DataHandler.train_val_test_split((0.7,0.2,0.1))
+#for a 70%, 20%, and 10% split
+```
