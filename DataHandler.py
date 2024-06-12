@@ -110,20 +110,30 @@ class JSON():
         
         os.chdir(cwd)
         if str(self.args['ENV'][0]["normalization"])=="MinMax":
+            self.MinMaxDict={}
             for ticker in self.tickers:
-                df=self.data[ticker]
-                self.data[ticker]=(df-df.min())/(df.max()-df.min())
+                self.MinMaxDict[ticker]={}
+                for variable in self.data[ticker]:
+                    df=self.data[ticker][variable]
+                    self.MinMaxDict[ticker][variable]=[df.min(),df.max()]
+                    self.data[ticker][variable]=(df-self.MinMaxDict[ticker][variable][0])/(self.MinMaxDict[ticker][variable][1]-self.MinMaxDict[ticker][variable][0])
+
+    def de_normalize(self,array,ticker,variable):
+        Min,Max=self.MinMaxDict[ticker][variable]
+        denormalized=np.zeros((array.shape[0],))
+        for i in range(array.shape[0]):
+            denormalized[i]=array[i]*(Max-Min)+Min
+        return denormalized
 
     def __split(self,df,ratio):
-
-        mask_1=np.array([x for x in range(len(df))])<int(len(df)*ratio[0])
-        mask_2=np.array([x for x in range(len(df))])<int(len(df)*ratio[1])
-        mask_3=np.array([x for x in range(len(df))])<int(len(df)*ratio[2])
-
+        n=len(df)
+        r1=int(n*ratio[0])
+        r2=int(n*ratio[1])+r1
+        r3=int(n*ratio[2])+r2
         return[
-            df[mask_1],
-            df[mask_1:mask_2],
-            df[mask_2:mask_3]
+            df[:r1],
+            df[r1:r2],
+            df[r2:r3]
         ]
     
     def train_val_test_split(self,ratio):
