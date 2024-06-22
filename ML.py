@@ -57,3 +57,7 @@ class LSTM():
 
     def predict(self):
         return self.model.predict(self.test_y).flatten()
+
+    def __add__(self,UNVM1,UNVM2):
+        #Uni_Variate_1 + Uni_Variate_2 = Multi-Model LSTM
+        pass

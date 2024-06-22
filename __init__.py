@@ -10,19 +10,6 @@ matplotlib.use('Agg')
 
 print("Initializing environment...")
 
-args = toml.load("Variables.toml")
-
-if not(os.path.isdir("Graphs")):
-    os.mkdir("Graphs")
-    print("Created Graphs directory.")
-
-if not(os.path.isdir("JSON_Data")):
-    os.mkdir("JSON_Data")
-    print("Created JSON data directory.")
-
-if args["ML"][0]["savemodel"] and not(os.path.isdir("Models")):
-    os.mkdir("Models")
-
 if not(os.path.isfile("Variables.toml")):
     TomlString="""
 [[ENV]]
@@ -48,6 +35,20 @@ epochs = int
 [[Statistics]]
 tickers=str/list
 variables=str/list"""
+
+args = toml.load("Variables.toml")
+
+if not(os.path.isdir("Graphs")):
+    os.mkdir("Graphs")
+    print("Created Graphs directory.")
+
+if not(os.path.isdir("JSON_Data")):
+    os.mkdir("JSON_Data")
+    print("Created JSON data directory.")
+
+if args["ML"][0]["savemodel"] and not(os.path.isdir("Models")):
+    os.mkdir("Models")
+
     with open("Variables.toml","w+") as F:
         F.write(TomlString)
     print(f"no TOML file was found, one was crated in the current directory of {os.getcwd()}")

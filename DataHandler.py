@@ -13,21 +13,9 @@ class ML():
                 tf.data.Dataset.from_tensor_slices(list(df[r2:r3]))
             ]
         
-    def train_val_test_split(self,ratio):
-        if type(args['ML'][0]["tickers"])==list:
-            if type(args['ML'][0]["variables"])==list:
-                for x in args['ML'][0]["tickers"]:
-                    for y in args['ML'][0]["variables"]:
-                        df=data[x][y]
-                        yield self.__split(df,ratio)
-            else:
-                for x in args['ML'][0]["tickers"]:
-                    df=data[x][args['ML'][0]["variables"]]
-                    yield self.__split(df,ratio)
-
-        else:
-            df=data[args['ML'][0]["tickers"]][args['ML'][0]["variables"]]
-            return self.__split(df,ratio)
+    def train_val_test_split(self,ratio,ticker,variable):
+        df=data[ticker][variable]
+        return self.__split(df,ratio)
         
     def Window_Data(self,TTV,shift=1):#TTV needs to be a tf.data.dataset.from_tensor_slice array
         T1Y, T1X = [],[]
