@@ -25,7 +25,7 @@ def graph_TTV(TTV_data,ticker,variable):
     plt.savefig(f"Graphs\\{ticker}_{variable}_LSTM_TTV.png")
     plt.close()
 
-def graph_prediction(predicted,actual,variable,ticker):
+def graph_prediction(predicted,actual,ticker,variable):
     _, ax = plt.subplots(2,figsize=(10,10))
     ax[0].title.set_text(f"Actual {variable}")
     ax[1].title.set_text(f"Predicted {variable}")
