@@ -1,38 +1,5 @@
-from . import plt,np
+from . import plt
 from .API_Interface import args
-
-def graph_TTV(TTV_data,ticker,variable):
-    _, ax = plt.subplots(4,figsize=(14,14))
-    plt.tight_layout()
-
-    G1=[i for i in range(len(TTV_data[0]))]
-    G2=[i for i in range(len(TTV_data[1]))]
-    G3=[i for i in range(len(TTV_data[2]))]
-
-    TotalSize=sum([len(TTV_data[i]) for i in range(3)])
-    ReCombined=np.append(np.append(TTV_data[0].values,TTV_data[1].values),TTV_data[2].values)
-
-    ax[0].plot(G1, TTV_data[0].values, color='r')
-    ax[3].plot([i for i in range(TotalSize)], ReCombined, color='b')
-    ax[3].plot(G1, TTV_data[0].values, color='r')
-    ax[0].title.set_text("Training TTV_data")
-    ax[1].plot(G2, TTV_data[1].values, color='g')
-    ax[3].plot([i for i in range(len(TTV_data[0]),len(TTV_data[0])+len(TTV_data[1]))], TTV_data[1].values, color='g')
-    ax[1].title.set_text("Testing TTV_data")
-    ax[2].plot(G3, TTV_data[2].values, color='b')
-    ax[2].title.set_text("Validation TTV_data")
-    ax[3].title.set_text("Full TTV_dataset")
-    plt.savefig(f"Graphs\\{ticker}_{variable}_LSTM_TTV.png")
-    plt.close()
-
-def graph_prediction(predicted,actual,ticker,variable):
-    _, ax = plt.subplots(2,figsize=(10,10))
-    ax[0].title.set_text(f"Actual {variable}")
-    ax[1].title.set_text(f"Predicted {variable}")
-    ax[0].plot([x for x in range(len(actual))], actual, color='g')
-    ax[1].plot([x for x in range(len(predicted))], predicted, color='g')
-    plt.savefig(f"Graphs\\LSTM_univariate_{ticker}_{variable}_prediction.png")
-    plt.close()
 
 def graph_df(df): 
     print("Graphing Open, High, Low, and Closing prices...")
@@ -51,3 +18,39 @@ def graph_df(df):
             currentplot+=1
         plt.savefig(f"Graphs\\{ticker}_data.png")
         plt.close()
+
+def graph_prediction(time_series,predicted_vector):
+    XAxis = [x for x in range(len(time_series))]
+    plt.tight_layout()
+    _, axes = plt.subplots(3,figsize=(16,16))
+    axes[0].plot(
+        XAxis,
+        time_series,
+        color='r'
+    )
+    axes[0].title.set_text(f"Original dataset")
+    PredictedXAxis=[x for x in range(len(XAxis),len(predicted_vector)+len(XAxis))]
+
+    axes[1].plot(
+        PredictedXAxis,
+        predicted_vector,
+        color='g'
+    )
+
+    axes[1].title.set_text(f"Predicted dataset")
+
+    FullXAxis = XAxis+PredictedXAxis
+    FullYAxis = time_series + predicted_vector
+    axes[2].plot(
+        FullXAxis,
+        FullYAxis,
+        color='b'
+    )
+    axes[2].title.set_text(f"Original and predicted dataset")
+    plt.savefig(f"Graphs\\orig_predicted_data.png")
+    plt.close()
+
+def graph_column(column,name):
+    plot=column.plot()
+    plot.savefig(name)
+    plot.close()

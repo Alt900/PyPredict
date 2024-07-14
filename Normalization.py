@@ -1,41 +1,50 @@
 from . import np
 global data
-from .API_Interface import data, tickers
+from .API_Interface import data
 
-DeNormalMask={}
+__DeNormalMask={}
 
 
 class Normalize():
-    def __init__(self):
-        self.vars=[x for x in data[tickers[0]]]
+    def __init__(self,ticker,variable):
+        self.ticker = ticker
+        self.variable = variable
 
     def MinMax(self):
-        for ticker in tickers:
-            DeNormalMask[ticker]={}
-            for variable in self.vars:
-                df=data[ticker][variable]
-                DeNormalMask[ticker][variable]=[df.min(),df.max()]
-                data[ticker][variable]=(df-DeNormalMask[ticker][variable][0])/(DeNormalMask[ticker][variable][1]-DeNormalMask[ticker][variable][0])
+        df=data[self.ticker][self.variable]
+        __DeNormalMask[self.ticker][self.variable]=[df.min(),df.max()]
+        data[self.ticker][self.variable]=(df-__DeNormalMask[self.ticker][self.variable][0])/(__DeNormalMask[self.ticker][self.variable][1]-__DeNormalMask[self.ticker][self.variable][0])
 
-    def log_normalization(self):
-        for ticker in tickers:
-            for variable in self.vars:
-                data[ticker][variable]=np.log(data[ticker][variable])
+    def Logarithmic(self):
+        data[self.ticker][self.variable]=np.log(data[self.ticker][self.variable])
+
+    def Z_score(self):
+        std=data[self.ticker][self.variable].std()
+        mean=data[self.ticker][self.variable].mean()
+        __DeNormalMask[self.ticker][self.variable]["std"]=std
+        __DeNormalMask[self.ticker][self.variable]["mean"]=mean
+        data[self.ticker][self.variable]=(data[self.ticker][self.variable]-mean)/std
         
 class DeNormalize():
-    def __init__(self):
-        self.vars=[x for x in data[tickers[0]]]
+    def __init__(self,ticker,variable,external_set=None):
+        self.ticker = ticker
+        self.variable = variable
+
+        self.External_Sets={
+            "MinMax":lambda exmin, exmax: [(x*(exmax-exmin)+exmin) for x in external_set],
+            "Logarithmic":lambda:[round(np.e**x,2) for x in external_set],
+            "z_score":lambda exstd,exmean: [(x*exstd+exmean) for x in external_set]
+        }
 
     def MinMax(self):
-        for ticker in tickers:
-            for variable in self.vars:
-                Min,Max=DeNormalMask[ticker][variable]
-                denormalized=np.zeros((data[ticker][variable].shape[0],))
-                for i in range(data[ticker][variable].shape[0]):
-                    denormalized[i]=data[ticker][variable][i]*(Max-Min)+Min
-                data[ticker][variable]=denormalized
+        Min,Max=__DeNormalMask[self.ticker][self.variable]
+        denormalized=np.zeros((data[self.ticker][self.variable].shape[0],))
+        for i in range(data[self.ticker][self.variable].shape[0]):
+            denormalized[i]=data[self.ticker][self.variable][i]*(Max-Min)+Min
+        data[self.ticker][self.variable]=denormalized
 
-    def log_normalization(self):
-        for ticker in tickers:
-            for variable in self.vars:
-                data[ticker][variable]=round(np.e**data[ticker][variable],2)
+    def Logarithmic(self):
+        data[self.ticker][self.variable]=round(np.e**data[self.ticker][self.variable],2)
+
+    def Z_score(self):
+        data[self.ticker][self.variable]=(data[self.ticker][self.variable]*__DeNormalMask[self.ticker][self.variable]["std"])+__DeNormalMask[self.ticker][self.variable]["mean"]

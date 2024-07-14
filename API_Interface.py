@@ -1,52 +1,36 @@
+import alpaca.data
 from . import args
-from . import pd, plt, os
-from polygon import RESTClient
-import datetime
+from . import pd, os
+from alpaca.data import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.live import StockDataStream,CryptoDataStream
+from datetime import datetime
+import alpaca
 
-client = RESTClient(api_key=args["ENV"][0]["polygon_token"])
+client = StockHistoricalDataClient(args["ENV"][0]["alpaca_key"],args["ENV"][0]["alpaca_secret"])
 cwd=os.getcwd()
 data={}
 tickers=args['ENV'][0]["tickers"]
 
 def _downloader(ticker):
-    open_=[]
-    high=[]
-    low=[]
-    close=[]
-    volume=[]
-    vwap = []
-    transactions = []
-    timestamp = []
-
-    for x in client.list_aggs(
-        ticker=ticker,
-        multiplier=1,
-        timespan=args["ENV"][0]["timespan"],
-        from_=args["ENV"][0]["from_"],
-        to=args["ENV"][0]["to"],
-        limit=50000
-    ):
-        open_.append(x.open)
-        high.append(x.high)
-        low.append(x.low)
-        close.append(x.close)
-        volume.append(x.volume)
-        vwap.append(x.vwap)
-        transactions.append(x.transactions)
-        date=datetime.datetime.fromtimestamp(x.timestamp/1000.)
-        timestamp.append(date)
-
-    df = pd.DataFrame({
-        "timestamp":timestamp,
-        "open":open_,
-        "high":high,
-        "low":low,
-        "close":close,
-        "volume":volume,
-        "vwap":vwap,
-        "transactions":transactions
-    }).set_index("timestamp")
+    from_=datetime(*args["ENV"][0]["from_"])
+    to=datetime(*args["ENV"][0]["to"])
+    try:
+        timeframe=eval(f"alpaca.data.timeframe.Timeframe.{args['ENV'][0]['time_span']}")
+    except Exception as E:
+        print("Could not resolve TOML timeframe, defaulting to minute scale...")
+        timeframe=alpaca.data.timeframe.TimeFrame.Minute
+    df=client.get_stock_bars(
+        StockBarsRequest(
+            symbol_or_symbols=ticker,
+            timeframe=timeframe,#'Day', 'Hour', 'Minute', 'Month', 'Week'
+            start=from_,
+            end=to
+        )
+    ).df.reset_index(level=[0])
+    df=df.drop(columns=["symbol"])
     df.to_json(f"{ticker}_data.json", orient = 'split', compression = 'infer', index = 'true')
+    return df
 
 def download():
     DataDirectory=cwd+"\\JSON_Data"
@@ -69,14 +53,32 @@ def download():
     if len(todownload)>0:
         print("Downloading...")
         for x in todownload:
-            _downloader(x)
+            data[x]=_downloader(x)
         print("Download complete.")
     else:
         print("No tickers found to scrape data for, passing download.")
 
     files=[x for x in os.listdir(DataDirectory) if not(any([x.endswith(".py"),x.endswith(".ini")]))]
+    on_hand=[x for x in data]
     for file,ticker in zip(files,tickers):
+        if ticker in on_hand:
+            continue
         df = pd.read_json(file, orient ='split', compression = 'infer')
         data[ticker]=df
 
     os.chdir(cwd)
+class LiveStream():
+    def __init__(self):
+        self.stock_client=StockDataStream(args["ENV"][0]["alpaca_key"],args["ENV"][0]["alpaca_secret"])
+        self.crypto_client=CryptoDataStream(args["ENV"][0]["alpaca_key"],args["ENV"][0]["alpaca_secret"])
+
+    async def stream_handler(self,data):
+        print(data)
+    
+    def open_stream(self,ticker):
+        self.stock_client.subscribe_quotes(self.stream_handler,ticker)
+        self.stock_client.run()
+
+    def open_crypto_stream(self,ticker):
+        self.crypto_client.subscribe_quotes(self.stream_handler,ticker)
+        self.crypto_client.run()

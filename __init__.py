@@ -3,10 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import toml
-import tensorflow as tf
+import torch
 
 import matplotlib
-matplotlib.use('Agg')
 
 print("Initializing environment...")
 
@@ -14,27 +13,20 @@ if not(os.path.isfile("Variables.toml")):
     TomlString="""
 [[ENV]]
 Omit_Cache = bool
-tickers=list
-normalization=str
+tickers=str || list
 timespan=str
-from_=str YYYY-MM-DD
-to=str YYYY-MM-DD
-polygon_token = str
-
+from_=list, format [YYYY,MM,DD]
+to=list, format [YYYY,MM,DD]
+alpaca_key = str
+alpaca_secret = str
 [[ML]]
-tickers=str/list
-variables=str/list
 batch_size = int
 windowsize = int
 learning_rate = float
-CNNAuxillary = bool
-loadmodel = bool
-savemodel = bool 
+load_model = bool
+save_model = bool 
 epochs = int
-
-[[Statistics]]
-tickers=str/list
-variables=str/list"""
+plot_loss=bool"""
 
 args = toml.load("Variables.toml")
 
@@ -46,7 +38,7 @@ if not(os.path.isdir("JSON_Data")):
     os.mkdir("JSON_Data")
     print("Created JSON data directory.")
 
-if args["ML"][0]["savemodel"] and not(os.path.isdir("Models")):
+if args["ML"][0]["save_model"] and not(os.path.isdir("Models")):
     os.mkdir("Models")
 
     with open("Variables.toml","w+") as F:
