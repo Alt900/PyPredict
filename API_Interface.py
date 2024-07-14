@@ -12,25 +12,30 @@ cwd=os.getcwd()
 data={}
 tickers=args['ENV'][0]["tickers"]
 
+try:
+    timeframe=eval(f"alpaca.data.timeframe.Timeframe.{args['ENV'][0]['time_span']}")
+except Exception as E:
+    print("Could not resolve TOML timeframe, defaulting to minute scale...")
+    timeframe=alpaca.data.timeframe.TimeFrame.Minute
+
 def _downloader(ticker):
-    from_=datetime(*args["ENV"][0]["from_"])
-    to=datetime(*args["ENV"][0]["to"])
     try:
-        timeframe=eval(f"alpaca.data.timeframe.Timeframe.{args['ENV'][0]['time_span']}")
-    except Exception as E:
-        print("Could not resolve TOML timeframe, defaulting to minute scale...")
-        timeframe=alpaca.data.timeframe.TimeFrame.Minute
-    df=client.get_stock_bars(
-        StockBarsRequest(
-            symbol_or_symbols=ticker,
-            timeframe=timeframe,#'Day', 'Hour', 'Minute', 'Month', 'Week'
-            start=from_,
-            end=to
-        )
-    ).df.reset_index(level=[0])
-    df=df.drop(columns=["symbol"])
-    df.to_json(f"{ticker}_data.json", orient = 'split', compression = 'infer', index = 'true')
-    return df
+        from_=datetime(*args["ENV"][0]["from_"])
+        to=datetime(*args["ENV"][0]["to"])
+        df=client.get_stock_bars(
+            StockBarsRequest(
+                symbol_or_symbols=ticker,
+                timeframe=timeframe,#'Day', 'Hour', 'Minute', 'Month', 'Week'
+                start=from_,
+                end=to
+            )
+        ).df.reset_index(level=[0])
+        df=df.drop(columns=["symbol"])
+        df.to_json(f"{ticker}_data.json", orient = 'split', compression = 'infer', index = 'true')
+        return df
+    
+    except AttributeError:
+        print(f"Could not download data for {ticker}, skipping")
 
 def download():
     DataDirectory=cwd+"\\JSON_Data"
