@@ -5,7 +5,11 @@ def graph_df(df):
     print("Graphing Open, High, Low, and Closing prices...")
     for ticker in df:
         currentplot=0
-        XAxis = [x for x in range(len(df[ticker]["volume"]))]
+        try:
+            XAxis = [x for x in range(len(df[ticker]["volume"]))]
+        except TypeError:
+            print(ticker)
+            print(df[ticker])
         plt.tight_layout()
         _, axes = plt.subplots(7,figsize=(16,16))
         for variable in df[ticker]:

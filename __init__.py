@@ -27,6 +27,10 @@ load_model = bool
 save_model = bool 
 epochs = int
 plot_loss=bool"""
+    with open("Variables.toml","w+",encoding='utf-8') as F:
+        F.write(TomlString)
+    print("A TOML file has been created, re-launch the program after fill out the values in the file.")
+    exit()
 
 args = toml.load("Variables.toml")
 
