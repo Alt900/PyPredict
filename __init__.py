@@ -10,8 +10,9 @@ import matplotlib
 print("Initializing environment...")
 
 if not(os.path.isfile("Variables.toml")):
-    TomlString="""
-[[ENV]]
+    with open("Variables.toml","w+",encoding='utf-8') as F:
+        F.write(
+"""[[ENV]]
 Omit_Cache = bool
 tickers=str || list
 timespan=str
@@ -26,9 +27,7 @@ learning_rate = float
 load_model = bool
 save_model = bool 
 epochs = int
-plot_loss=bool"""
-    with open("Variables.toml","w+",encoding='utf-8') as F:
-        F.write(TomlString)
+plot_loss=bool""")
     print("A TOML file has been created, re-launch the program after fill out the values in the file.")
     exit()
 
