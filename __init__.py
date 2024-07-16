@@ -15,7 +15,6 @@ if not(os.path.isfile("Variables.toml")):
 """[[ENV]]
 Omit_Cache = bool
 tickers=str || list
-timespan=str
 from_=list, format [YYYY,MM,DD]
 to=list, format [YYYY,MM,DD]
 alpaca_key = str
@@ -32,6 +31,8 @@ plot_loss=bool""")
     exit()
 
 args = toml.load("Variables.toml")
+filesystem="\\" if os.name=="nt" else "/"
+
 
 if not(os.path.isdir("Graphs")):
     os.mkdir("Graphs")
@@ -43,8 +44,3 @@ if not(os.path.isdir("JSON_Data")):
 
 if args["ML"][0]["save_model"] and not(os.path.isdir("Models")):
     os.mkdir("Models")
-
-    with open("Variables.toml","w+") as F:
-        F.write(TomlString)
-    print(f"no TOML file was found, one was crated in the current directory of {os.getcwd()}")
-    exit()

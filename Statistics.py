@@ -1,23 +1,23 @@
 import statsmodels
 import statsmodels.api as api
+from . import np
 
 from .API_Interface import data
-
 
 class Standard_Measurements():
     def __init__(self,ticker,variable):
         self.ticker=ticker
         self.variable=variable
 
-def Central_Tendacy(self):
-    return [
-        data[self.ticker][self.variable].mean(),
-        data[self.ticker][self.variable].median(),
-        data[self.ticker][self.variable].mode()[0],]
-            
-def standard_deviation(self):
-    return data[self.ticker][self.variable].std()
-
+    def Central_Tendacy(self):
+        return [
+            data[self.ticker][self.variable].mean(),
+            data[self.ticker][self.variable].median(),
+            data[self.ticker][self.variable].mode()[0],]
+                
+    def standard_deviation(self):
+        return data[self.ticker][self.variable].std()
+    
 class Ordinary_least_squares():
     def __init__(self,x,y,pval_threshold):
         self.pval_threshold=pval_threshold

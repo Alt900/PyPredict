@@ -1,5 +1,5 @@
 import alpaca.data
-from . import args
+from . import args, filesystem
 from . import pd, os
 from alpaca.data import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
@@ -7,22 +7,16 @@ from alpaca.data.live import StockDataStream,CryptoDataStream
 from datetime import datetime
 import alpaca
 
-client = StockHistoricalDataClient(args["ENV"][0]["alpaca_key"],args["ENV"][0]["alpaca_secret"])
+__client = StockHistoricalDataClient(args["ENV"][0]["alpaca_key"],args["ENV"][0]["alpaca_secret"])
 cwd=os.getcwd()
 data={}
 tickers=args['ENV'][0]["tickers"]
 
-try:
-    timeframe=eval(f"alpaca.data.timeframe.Timeframe.{args['ENV'][0]['time_span']}")
-except Exception as E:
-    print("Could not resolve TOML timeframe, defaulting to minute scale...")
-    timeframe=alpaca.data.timeframe.TimeFrame.Minute
-
-def _downloader(ticker):
+def _downloader(ticker,timeframe):
     try:
         from_=datetime(*args["ENV"][0]["from_"])
         to=datetime(*args["ENV"][0]["to"])
-        df=client.get_stock_bars(
+        df=__client.get_stock_bars(
             StockBarsRequest(
                 symbol_or_symbols=ticker,
                 timeframe=timeframe,#'Day', 'Hour', 'Minute', 'Month', 'Week'
@@ -37,8 +31,8 @@ def _downloader(ticker):
     except AttributeError:
         print(f"Could not download data for {ticker}, skipping")
 
-def download():
-    DataDirectory=cwd+"\\JSON_Data"
+def download(timeframe=alpaca.data.timeframe.TimeFrame.Minute):
+    DataDirectory=cwd+f"{filesystem}JSON_Data"
     os.chdir(DataDirectory)
 
     #check for cache arg and cached files
@@ -58,7 +52,7 @@ def download():
     if len(todownload)>0:
         print("Downloading...")
         for x in todownload:
-            data[x]=_downloader(x)
+            data[x]=_downloader(x,timeframe=timeframe)
         print("Download complete.")
     else:
         print("No tickers found to scrape data for, passing download.")
@@ -78,9 +72,11 @@ class LiveStream():
         self.crypto_client=CryptoDataStream(args["ENV"][0]["alpaca_key"],args["ENV"][0]["alpaca_secret"])
 
     async def stream_handler(self,data):
-        print(data)
+        print(f"Ask ${data.ask_price} for {data.ask_size} volume\nBid ${data.bid_price} for {data.bid_size} volume\n")
+
     
     def open_stream(self,ticker):
+        print(f"Opening a live stream to {ticker}")
         self.stock_client.subscribe_quotes(self.stream_handler,ticker)
         self.stock_client.run()
 

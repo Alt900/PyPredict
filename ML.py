@@ -1,4 +1,4 @@
-from .API_Interface import args
+from .API_Interface import args,filesystem
 from . import torch
 
 window_size = args["ML"][0]["windowsize"]
@@ -30,10 +30,9 @@ class UNI_Backend(torch.nn.Module):
         self.dropout_1=torch.nn.Dropout(p=0.2)
         self.LSTM_2=torch.nn.LSTM(cell_count,cell_count,layers,batch_first=True)
         self.dropout_2=torch.nn.Dropout(p=0.05)
-        self.linear=torch.nn.Linear(cell_count,output_size)
+        self.linear=torch.nn.Linear(cell_count,output_size)#change to None,1 for StO and None,window_size,1 for STS
 
-    def forward(self, x, future=0):
-        predicted = []
+    def forward(self, x):
         batch_size = x.shape[0]
 
         hidden_state_1 = torch.zeros(self.layers, batch_size, self.cell_count, dtype=torch.float32)
@@ -46,17 +45,8 @@ class UNI_Backend(torch.nn.Module):
         hidden_state_2, cell_state_2 = self.LSTM_2(hidden_state_1,(hidden_state_2,cell_state_2))
         hidden_state_2 = self.dropout_2(hidden_state_2)
 
-
         output=self.linear(hidden_state_2)
-        predicted.append(output)
-
-        for _ in range(future):
-            hidden_state_1, cell_state_1 = self.LSTM_1(output,(hidden_state_1,cell_state_1))
-            output=self.linear(hidden_state_1)
-            predicted.append(output)
-
-        predicted=torch.cat(predicted, dim=1)
-        return predicted
+        return output
 
 class Univariate_LSTM():
     def __init__(self, X, Y, cell_count=20, output_size=1,filename=None):
@@ -65,7 +55,7 @@ class Univariate_LSTM():
 
         self.model = UNI_Backend(cell_count=cell_count, output_size=output_size)
         if args["ML"][0]["load_model"]:
-            self.model=self.model.load_state_dict(torch.load(f"Models\\{filename}.pt"))
+            self.model=self.model.load_state_dict(torch.load(f"Models{filesystem}{filename}.pt"))
             self.model.eval()
 
         self.optimizer = torch.optim.Adam(self.model.parameters())
@@ -125,11 +115,12 @@ class Univariate_LSTM():
                         color=c
                     )
             plt.title("RMSE loss")
-            plt.savefig(f"Graphs\\RMSE_Loss.png")
+            plt.savefig(f"Graphs{filesystem}RMSE_Loss.png")
             plt.close()
 
         if args["ML"][0]["save_model"]:
-            torch.save(self.model.state_dict(),f"Models\\{self.filename}.pt")
+            torch.save(self.model.state_dict(),f"Models{filesystem}{self.filename}.pt")
 
     def predict(self,x):
-        return self.model(torch.tensor(x)).flatten().tolist()
+        predicted=self.model(torch.tensor(x))[:,-1,:]
+        return predicted.flatten().tolist()

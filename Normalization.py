@@ -26,14 +26,14 @@ class Normalize():
         data[self.ticker][self.variable]=(data[self.ticker][self.variable]-mean)/std
         
 class DeNormalize():
-    def __init__(self,ticker,variable,external_set=None):
+    def __init__(self,ticker,variable):
         self.ticker = ticker
         self.variable = variable
 
         self.External_Sets={
-            "MinMax":lambda exmin, exmax: [(x*(exmax-exmin)+exmin) for x in external_set],
-            "Logarithmic":lambda:[round(np.e**x,2) for x in external_set],
-            "z_score":lambda exstd,exmean: [(x*exstd+exmean) for x in external_set]
+            "MinMax":lambda external_set, exmin, exmax: [(x*(exmax-exmin)+exmin) for x in external_set],
+            "Logarithmic":lambda external_set:[round(np.e**x,2) for x in external_set],
+            "z_score":lambda external_set, exstd, exmean: [(x*exstd+exmean) for x in external_set]
         }
 
     def MinMax(self):

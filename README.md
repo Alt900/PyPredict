@@ -1,83 +1,68 @@
 # PyPredict
 ![](logo.png)
-## Operating system restrictions
-Currently the module is only supported for Windows however Linux and Mac OS file system support will be added soon
 
 
 ## Requirements
-In order to run this module you will need to run the `InstallRequirements.bat` batch file in the PyPredict directory
+In order to run this module you will need to run the `InstallRequirements.py` python file in the PyPredict directory
 
 
 ## Front-end setup
-To import sub-modules use `from PyPredict import module` from a list of sub-modules `from PyPredict import API_Interface, DataHandler, Normalization, ML, Graphics`. The following is a full code example of the front end and different use cases:
+To import sub-modules use `from PyPredict import module` from a list of sub-modules `from PyPredict import API_Interface, DataHandler, Normalization, ML, Graphics, Statistics`. The following is a full code example of the front end and different use cases:
 ```
-from PyPredict import API_Interface, DataHandler, Normalization, ML, Graphics
-from PyPredict import args
+from PyPredict import API_Interface, DataHandler, Normalization, ML, Graphics, Statistics
+from PyPredict import args,np
 from PyPredict.API_Interface import data
 
 ###general setup###
+
 API_Interface.download()#initiate the download of listed tickers
+Graphics.graph_df(data)#graph the entire dataset passing all the downloaded data 
 
-###graphing data###
-Graphics.graph_df(data)#passing all the downloaded data 
-###Machine Learning###
-DH=DataHandler.ML()
-Normalizer=Normalization.Normalize()
-Normalizer.log_normalization()
-#(test_ratio,train_ratio,validation_ratio)
-data=DH.train_val_test_split((.6,.2,.2))
-variables=args["ML"][0]["variables"]
-#if data is a generator function
-for ticker in args["ML"][0]["tickers"]:
-    for (variable,y) in zip(variables,data):
-        windowed = DH.Window_Data(y)
-        LSTM=ML.LSTM(windowed,variable,ticker)
-        Graphics.graph_TTV(
-            [LSTM.test,
-            LSTM.train,
-            LSTM.validation],
-            ticker, variable
-        )
-        LSTM.train()
-        prediction=LSTM.predict()
-        Graphics.graph_prediction(prediction, LSTM.test, ticker, variable)
+#normalization
+Normalizer=Normalization.Normalize("TELL","close")
+Normalizer.Logarithmic()#either pass a pandas column or a list of values
+DeNormalizer=Normalization.DeNormalize("TELL","close")
 
-#if data is not a generator function
-LSTM=ML.LSTM(data,"open","NVDA")
+
+#perform some feature engineering
+FE=DataHandler.Feature_Engineering(data["TELL"]["close"],min=0.41,max=0.77)
+decomposed=FE.seasonal_decompose(period=15)
+MAD_result=FE.MAD(threshold=1.9)
+
+#prepare the data for the LSTM, construct the model, and begin training
+DH=DataHandler.LSTM_Prep(data["TELL"]["close"],ratio=(.7,.3))
+LSTM=ML.Univariate_LSTM(DH.TTV_x, DH.TTV_y,cell_count=70,output_size=1,filename="Tellurian_close")
 LSTM.train()
-LSTM.predict()
+
+#extract a prediction and de-normalize the predicted set and the testing set
+prediction=LSTM.predict(DH.TTV_x[1])#testing data
+de_normalized_test_y = DeNormalizer.External_Sets["Logarithmic"](DH.TTV_y[1].flatten())
+de_normalized_test_x = DeNormalizer.External_Sets["Logarithmic"](DH.TTV_x[1].flatten())
+de_normalized_prediction = DeNormalizer.External_Sets["Logarithmic"](prediction)
+Graphics.graph_prediction_overlapped(de_normalized_test_y,de_normalized_prediction)
+Graphics.graph_prediction_merged(de_normalized_test_x,de_normalized_prediction)
 ```
 
 ### TOML file and args
 
 
-The `Variables.toml` file contains a wide array of tunable parameters that are used throughout the code base. The file's variables are split into three different sections `[[ENV]]` for basic environmental variables, `[[ML]]` for machine learning parameters, and `[[STATS]]` for statistical parameters. The TOML file should be located in the current working directory of your local project, if one is not available a file will be generated in the same current working directory with what type of variable should be provided for each. Here is an example of what a generated TOML file will look like:
+The `Variables.toml` file contains a wide array of tunable parameters that are used throughout the code base. The file's variables are split into two different sections `[[ENV]]` for basic environmental variables and `[[ML]]` for machine learning parameters. The TOML file should be located in the current working directory of your local project, if one is not available a file will be generated in the same current working directory with what type of variable should be provided for each. Here is an example of what a generated TOML file will look like:
 ```
 [[ENV]]
 Omit_Cache = bool
-tickers=list
-normalization=str
-timespan=str
-from_=str YYYY-MM-DD
-to=str YYYY-MM-DD
-polygon_token = str
-
-
+tickers=str || list
+from_=list, format [YYYY,MM,DD]
+to=list, format [YYYY,MM,DD]
+alpaca_key = str
+alpaca_secret = str
 [[ML]]
-tickers=str/list
-variables=str/list
 batch_size = int
 windowsize = int
 learning_rate = float
-CNNAuxillary = bool
-loadmodel = bool
-savemodel = bool
+load_model = bool
+save_model = bool 
 epochs = int
-
-
-[[Statistics]]
-tickers=str/list
-variables=str/list
+plot_loss=bool
 ```
 
 And an example of what a fully filled out TOML file:
