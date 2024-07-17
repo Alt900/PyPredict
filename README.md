@@ -15,13 +15,10 @@ To import sub-modules use `from PyPredict import module` from a list of sub-modu
 from PyPredict import API_Interface, DataHandler, Normalization, ML, Graphics, Statistics
 from PyPredict.API_Interface import data
 
-
 ###general setup###
 
-
-API_Interface.download()#initiate the download of listed stocks
-Graphics.graph_df(data)#graph the entire dataset passing all the downloaded data
-
+API_Interface.download()#initiate the download of listed tickers
+Graphics.graph_df(data)#graph the entire dataset passing all the downloaded data 
 
 #normalization
 Normalizer=Normalization.Normalize("NVDA","open")
@@ -29,19 +26,15 @@ Normalizer.Logarithmic()#either pass a pandas column or a list of values
 DeNormalizer=Normalization.DeNormalize("NVDA","open")
 
 
-
-
 #perform some feature engineering
 FE=DataHandler.Feature_Engineering(data["NVDA"]["open"],min=0.41,max=0.77)
 decomposed=FE.seasonal_decompose(period=30)
 MAD_result=FE.MAD(threshold=1.9)
 
-
 #prepare the data for the LSTM, construct the model, and begin training
 DH=DataHandler.LSTM_Prep(data["NVDA"]["open"],ratio=(.7,.3))
 LSTM=ML.Univariate_LSTM(DH.TTV_x, DH.TTV_y,cell_count=70,output_size=1,filename="NVDA_open")
 LSTM.train()
-
 
 #extract a prediction and de-normalize the predicted set and the testing set
 prediction=LSTM.predict(DH.TTV_x[1])#testing data
@@ -51,12 +44,11 @@ de_normalized_prediction = DeNormalizer.External_Sets["Logarithmic"](prediction)
 Graphics.graph_prediction_overlapped(de_normalized_test_y,de_normalized_prediction)
 Graphics.graph_prediction_merged(de_normalized_test_x,de_normalized_prediction)
 
-
 #perform linear regression with a coefficient of volume and a dependent variable of opening prices
-LSTM_linear_diagnostics=Statistics.Ordinary_least_squares(data["NVDA"]["volume"],data["NVDA"]["open"],pval_threshold=0.05)
-print(LSTM_linear_diagnostics.summary)
-LSTM_linear_diagnostics.null_hypothesis()
-LSTM_linear_diagnostics.diagnose_heteroskedasticity("whites")
+linear_regression=Statistics.Ordinary_least_squares(data["NVDA"]["volume"],data["NVDA"]["open"],pval_threshold=0.05)
+print(linear_regression.summary)
+linear_regression.null_hypothesis()
+linear_regression.diagnose_heteroskedasticity("whites")
 ```
 
 
