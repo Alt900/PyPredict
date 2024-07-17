@@ -1,12 +1,4 @@
-from . import plt,np, filesystem
-
-def graph_interpolation(x,y,interpolation_result,interpolation_grid,plot_name="Polynomial_Interpolation"):
-    plt.scatter([z for z in range(x.shape[0])],x,color='b',label='original bivariate dataset')
-    plt.scatter([z for z in range(y.shape[0])],y,color='b')
-    plt.plot(interpolation_grid, interpolation_result, color='g', label="polynomial interpolation")
-    plt.legend()
-    plt.savefig(f"Graphs{filesystem}{plot_name}.png")
-    plt.close()
+from . import plt,filesystem
 
 def graph_df(df): 
     print("Graphing Open, High, Low, and Closing prices...")
@@ -80,15 +72,15 @@ def graph_prediction_overlapped(time_series,predicted_vector,filename="Test_pred
     )
 
     axes[2].plot(
-        PredictedXAxis,
-        predicted_vector,
-        color='g'
-    )
-
-    axes[2].plot(
         XAxis,
         time_series,
         color='r'
+    )
+
+    axes[2].plot(
+        PredictedXAxis,
+        predicted_vector,
+        color='g'
     )
 
     axes[0].title.set_text(f"Real values")
@@ -96,8 +88,3 @@ def graph_prediction_overlapped(time_series,predicted_vector,filename="Test_pred
     axes[2].title.set_text(f"Overlapped")
     plt.savefig(f"Graphs{filesystem}{filename}.png")
     plt.close()
-
-def graph_column(column,name):
-    plot=column.plot()
-    plot.savefig(name)
-    plot.close()
